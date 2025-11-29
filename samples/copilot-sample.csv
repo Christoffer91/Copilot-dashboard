@@ -1,0 +1,9 @@
+PersonId,Organization,CountryOrRegion,Domain,MetricDate,Total Active Copilot Actions Taken,Copilot assisted hours,Meetings recapped by Copilot,Generate email draft actions taken using Copilot,Compose chat actions taken using Copilot in Teams,Meeting hours recapped by Copilot,Copilot Enabled User
+USR-001,Contoso Sales,Denmark,sales.contoso,2024-10-06,180,42.5,18,45,52,68,1
+USR-002,Contoso Sales,Denmark,sales.contoso,2024-11-03,220,51.1,24,58,64,72,1
+USR-003,Fabrikam Finance,Norway,finance.fabrikam,2024-11-10,305,63.8,32,70,88,94,1
+USR-004,Fabrikam Finance,Norway,finance.fabrikam,2024-12-08,276,54.2,28,64,79,90,1
+USR-005,Woodgrove Retail,Sweden,retail.woodgrove,2024-12-15,148,38.7,12,41,55,48,1
+USR-006,Woodgrove Retail,Sweden,retail.woodgrove,2025-01-05,312,72.4,36,82,94,110,1
+USR-007,Northwind Ops,Finland,ops.northwind,2025-01-19,196,47.3,20,53,61,66,1
+USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1

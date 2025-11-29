@@ -1,0 +1,19 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+.idea/
+.vscode/
+
+# Dependencies/build artifacts
+node_modules/
+dist/
+build/
+coverage/
+
+# Env/secrets
+.env
+.env.*
+*.pem
