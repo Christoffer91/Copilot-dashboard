@@ -220,10 +220,12 @@
         <div class="filter-toggle" data-filter-metric-group role="group" aria-label="Metric">
           <button type="button" class="filter-pill is-active" data-filter-metric-button="actions">Copilot actions taken</button>
           <button type="button" class="filter-pill" data-filter-metric-button="hours">Copilot assisted hours</button>
+          <button type="button" class="filter-pill" data-filter-metric-button="adoption">Active users (%)</button>
         </div>
         <select id="metricFilter" data-filter-metric hidden aria-label="Metric filter">
           <option value="actions" selected>Copilot actions taken</option>
           <option value="hours">Copilot assisted hours</option>
+          <option value="adoption">Active users (%)</option>
         </select>
       </div>
       <div class="control-select control-select--toggle">
@@ -395,7 +397,7 @@
       <button type="button" class="view-more-button" data-view-more hidden aria-expanded="false">Show remaining groups/offices</button>
     </section>
 
-    <section class="trend-card agent-hub" aria-label="Copilot agent exports" data-agent-hub>
+    <section class="trend-card agent-hub" aria-label="Copilot agent exports" data-agent-hub hidden>
       <header class="card-header-with-actions">
         <div>
           <h2 class="chart-title">Top Copilot agents</h2>
@@ -947,6 +949,10 @@
         </div>
       </article>
     </section>
+    <section class="agent-toggle" data-agent-toggle-wrapper>
+      <button type="button" class="storage-button" data-agent-toggle aria-expanded="false">Show agent usage</button>
+    </section>
+    <div data-agent-hub-anchor></div>
   </main>
   <footer class="page-footer">
     <p class="muted">Built by Christoffer Besler Hansen · Licensed under AGPL-3.0.</p>

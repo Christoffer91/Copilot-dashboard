@@ -2104,9 +2104,24 @@ body.is-dark-carbon {
       color: var(--green-700);
     }
 
+    .trend-view-button.is-disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     .trend-view-button:focus-visible {
       outline: none;
       box-shadow: 0 0 0 2px rgba(0, 110, 0, 0.24);
+    }
+
+    .agent-toggle {
+      display: flex;
+      justify-content: center;
+      margin: 24px 0;
+    }
+
+    .agent-toggle .storage-button {
+      min-width: 220px;
     }
 
     .insight-card {

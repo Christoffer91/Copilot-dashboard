@@ -61,6 +61,7 @@
           let latestSnapshotExport = "";
           let snapshotDownloadUrl = null;
           let snapshotCopyTimeout = null;
+          let agentHubVisible = false;
       
           const state = {
             rows: [],
@@ -932,8 +933,24 @@
           const chartSeriesDefinitions = [
             {
               id: "total",
-              label: metric => (metric === "hours" ? "Assisted hours" : "Total actions"),
-              getValue: period => (state.filters.metric === "hours" ? period.assistedHours : period.totalActions),
+              label: metric => {
+                if (metric === "hours") {
+                  return "Assisted hours";
+                }
+                if (metric === "adoption") {
+                  return "Active users (%)";
+                }
+                return "Total actions";
+              },
+              getValue: period => {
+                if (state.filters.metric === "hours") {
+                  return period.assistedHours;
+                }
+                if (state.filters.metric === "adoption") {
+                  return getPeriodAdoptionRate(period);
+                }
+                return period.totalActions;
+              },
               borderColor: "rgba(0, 110, 0, 0.9)",
               backgroundColor: "rgba(0, 110, 0, 0.18)",
               fill: "origin",
@@ -1536,6 +1553,9 @@
             activeDaysGrid: document.querySelector("[data-active-days-grid]"),
             activeDaysToggleButtons: document.querySelectorAll("[data-active-days-view]"),
             agentHubContainer: document.querySelector("[data-agent-hub]"),
+            agentHubAnchor: document.querySelector("[data-agent-hub-anchor]"),
+            agentToggleWrapper: document.querySelector("[data-agent-toggle-wrapper]"),
+            agentToggle: document.querySelector("[data-agent-toggle]"),
             agentHubReset: document.querySelector("[data-agent-reset]"),
             agentHubTabs: document.querySelector("[data-agent-tabs]"),
             agentHubTabButtons: document.querySelectorAll("[data-agent-tab]"),
@@ -1579,6 +1599,37 @@
           agentHubSections[type] = section;
         });
 
+        function relocateAgentHub() {
+          const hub = dom.agentHubContainer;
+          if (!hub) {
+            return;
+          }
+          const anchor = dom.agentHubAnchor || document.querySelector("[data-agent-hub-anchor]");
+          if (anchor && hub.parentElement !== anchor) {
+            anchor.append(hub);
+          } else if (!anchor) {
+            const main = document.querySelector("main");
+            if (main && hub.parentElement !== main) {
+              main.append(hub);
+            }
+          }
+          hub.hidden = true;
+        }
+
+        function setAgentHubVisibility(visible) {
+          const hub = dom.agentHubContainer;
+          const toggle = dom.agentToggle;
+          if (!hub || !toggle) {
+            return;
+          }
+          hub.hidden = !visible;
+          toggle.textContent = visible ? "Hide agent usage" : "Show agent usage";
+          toggle.setAttribute("aria-expanded", String(visible));
+          if (visible) {
+            hub.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
+
         setButtonEnabled(dom.returningExportPng, false);
         setButtonEnabled(dom.returningExportCsv, false);
         setButtonEnabled(dom.usageTrendExportPng, false);
@@ -1598,6 +1649,15 @@
         syncMultiSelect(dom.countryFilter, state.filters.country);
 
           updateStoredDatasetControls(null);
+
+          relocateAgentHub();
+          setAgentHubVisibility(false);
+          if (dom.agentToggle) {
+            dom.agentToggle.addEventListener("click", () => {
+              agentHubVisible = !agentHubVisible;
+              setAgentHubVisibility(agentHubVisible);
+            });
+          }
       
           function ensureEnabledLicensesColorState() {
             if (!state.enabledLicensesColors) {
@@ -2099,8 +2159,28 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             return 0;
           }
 
+          function getPeriodAdoptionRate(period) {
+            if (!period) {
+              return 0;
+            }
+            if (Number.isFinite(period.adoptionRate)) {
+              return period.adoptionRate;
+            }
+            const active = getPeriodUserCount(period);
+            const enabled = Number.isFinite(period.enabledUsersCount)
+              ? period.enabledUsersCount
+              : (period.enabledUsers instanceof Set ? period.enabledUsers.size : 0);
+            if (!enabled || !active) {
+              return 0;
+            }
+            return (active / enabled) * 100;
+          }
+
           function adjustTrendValueForView(rawValue, period, definition) {
             const numeric = Number.isFinite(rawValue) ? rawValue : 0;
+            if (state.filters.metric === "adoption") {
+              return numeric;
+            }
             if (state.trendView === "average" && (!definition || definition.supportsAverage !== false)) {
               const count = getPeriodUserCount(period);
               if (!count) {
@@ -2130,6 +2210,11 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
 
           function formatTrendAxisTick(value) {
             const numeric = normalizeTrendValue(value);
+            if (state.filters.metric === "adoption") {
+              const abs = Math.abs(numeric);
+              const digits = abs >= 10 ? 1 : (abs >= 1 ? 1 : 2);
+              return `${formatTrendFixed(numeric, digits)}%`;
+            }
             if (state.trendView === "average") {
               if (state.filters.metric === "hours") {
                 const abs = Math.abs(numeric);
@@ -2158,6 +2243,11 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
 
           function formatTrendTooltipValue(value) {
             const numeric = normalizeTrendValue(value);
+            if (state.filters.metric === "adoption") {
+              const abs = Math.abs(numeric);
+              const digits = abs >= 10 ? 1 : (abs >= 1 ? 1 : 2);
+              return `${formatTrendFixed(numeric, digits)}%`;
+            }
             if (state.trendView === "average") {
               if (state.filters.metric === "hours") {
                 const abs = Math.abs(numeric);
@@ -2188,6 +2278,9 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
           }
 
           function getTrendUnitLabel() {
+            if (state.filters.metric === "adoption") {
+              return "% active users";
+            }
             const metricIsHours = state.filters.metric === "hours";
             if (state.trendView === "average") {
               return metricIsHours ? "hours per user" : "actions per user";
@@ -2242,8 +2335,8 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                       const datasetLabel = context.dataset && context.dataset.label ? context.dataset.label : "Value";
                       const value = Number.isFinite(context.parsed.y) ? context.parsed.y : 0;
                       const formattedValue = formatTrendTooltipValue(value);
-                      const unit = getTrendUnitLabel();
-                      return `${datasetLabel}: ${formattedValue} ${unit}`;
+                      const unit = state.filters.metric === "adoption" ? "" : getTrendUnitLabel();
+                      return unit ? `${datasetLabel}: ${formattedValue} ${unit}` : `${datasetLabel}: ${formattedValue}`;
                     },
                     afterBody: contexts => {
                       if (state.trendView !== "average") {
@@ -2911,6 +3004,9 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
 
           dom.metricFilter.addEventListener("change", () => {
             state.filters.metric = dom.metricFilter.value;
+            if (state.filters.metric === "adoption") {
+              state.trendView = "total";
+            }
             refreshFilterToggleStates();
             renderDashboard();
             persistFilterPreferences();
@@ -2919,6 +3015,9 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
           if (dom.trendViewButtons && dom.trendViewButtons.length) {
             dom.trendViewButtons.forEach(button => {
               button.addEventListener("click", () => {
+                if (state.filters.metric === "adoption") {
+                  return;
+                }
                 const view = button.dataset.trendView === "average" ? "average" : "total";
                 if (state.trendView === view) {
                   return;
@@ -7543,6 +7642,9 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             syncUsageThresholdInputs();
             updateReturningMetricToggleState();
             updateReturningIntervalToggleState();
+            if (state.filters.metric === "adoption" && state.trendView !== "total") {
+              state.trendView = "total";
+            }
             updateTrendViewToggleState();
             updateActiveDaysToggleState();
             if (dom.returningMetric && dom.returningMetric.value !== state.returningMetric) {
@@ -8417,6 +8519,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 const usersSet = values.users instanceof Set ? values.users : new Set();
                 const enabledSet = values.enabledUsers instanceof Set ? values.enabledUsers : new Set();
                 const userCount = usersSet.size || 0;
+                const enabledCount = enabledSet.size || 0;
                 return {
                   label: formatPeriodLabel(label, values.date),
                   totalActions: values.totalActions,
@@ -8425,10 +8528,11 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   categories: values.categories,
                   users: new Set(usersSet),
                   enabledUsers: new Set(enabledSet),
-                  enabledUsersCount: enabledSet.size || 0,
+                  enabledUsersCount: enabledCount,
                   userCount,
                   averageActionsPerUser: userCount ? values.totalActions / userCount : 0,
-                  averageHoursPerUser: userCount ? values.assistedHours / userCount : 0
+                  averageHoursPerUser: userCount ? values.assistedHours / userCount : 0,
+                  adoptionRate: enabledCount ? (userCount / enabledCount) * 100 : 0
                 };
               })
               .sort((a, b) => a.date - b.date);
@@ -8743,7 +8847,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 if (!def.togglable) {
                   return true;
                 }
-                if (metric === "hours") {
+                if (metric === "hours" || metric === "adoption") {
                   return false;
                 }
                 if (normalizedDetailMode === "none") {
@@ -8818,6 +8922,11 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             }
             const isAverageView = state.trendView === "average";
             const isHoursMetric = state.filters.metric === "hours";
+            const isAdoptionMetric = state.filters.metric === "adoption";
+            if (isAdoptionMetric) {
+              dom.trendCaption.textContent = `Active users (% of enabled) aggregated ${state.filters.aggregate}.`;
+              return;
+            }
             const metricLabel = isHoursMetric
               ? (isAverageView ? "Copilot assisted hours per active user" : "Copilot assisted hours")
               : (isAverageView ? "Copilot actions per active user" : "Copilot actions");
@@ -8870,7 +8979,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               return;
             }
             const hasDetailDefinitions = chartSeriesDefinitions.some(def => def.togglable);
-            const metricSupportsDetails = state.filters.metric !== "hours";
+            const metricSupportsDetails = state.filters.metric === "actions";
             const hasTrendData = Array.isArray(state.latestTrendPeriods) && state.latestTrendPeriods.length > 0;
             const detailModeAllows = state.seriesDetailMode !== "none";
             const shouldShow = hasDetailDefinitions && metricSupportsDetails && hasTrendData && detailModeAllows;
@@ -8888,7 +8997,8 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
           function updateSeriesToggleState() {
             const metricIsHours = state.filters.metric === "hours";
             if (dom.seriesHint) {
-              dom.seriesHint.hidden = !metricIsHours;
+              const hintShouldShow = metricIsHours || state.filters.metric === "adoption";
+              dom.seriesHint.hidden = !hintShouldShow;
             }
             const selection = getActiveCategorySelection();
             seriesToggleButtons.forEach((button, id) => {
@@ -8896,6 +9006,9 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               state.seriesVisibility[id] = visible;
               button.classList.toggle("is-active", visible);
               button.setAttribute("aria-pressed", String(visible));
+              const disabled = state.filters.metric !== "actions";
+              button.disabled = disabled;
+              button.classList.toggle("is-disabled", disabled);
             });
           }
       
@@ -8904,7 +9017,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               return;
             }
             const isHidden = state.seriesDetailMode === "none";
-            const disabled = !state.rows.length;
+            const disabled = !state.rows.length || state.filters.metric === "hours" || state.filters.metric === "adoption";
             dom.seriesModeToggle.setAttribute("aria-pressed", String(isHidden));
             dom.seriesModeToggle.textContent = isHidden ? "Show capability lines" : "Hide capability lines";
             dom.seriesModeToggle.disabled = disabled;
@@ -9565,12 +9678,20 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             if (!dom.trendViewButtons || !dom.trendViewButtons.length) {
               return;
             }
-            const activeView = state.trendView === "average" ? "average" : "total";
+            const isAdoptionMetric = state.filters.metric === "adoption";
+            const activeView = isAdoptionMetric ? "total" : (state.trendView === "average" ? "average" : "total");
             dom.trendViewButtons.forEach(button => {
               const buttonView = button.dataset.trendView === "average" ? "average" : "total";
               const isActive = buttonView === activeView;
               button.classList.toggle("is-active", isActive);
               button.setAttribute("aria-pressed", String(isActive));
+              if (isAdoptionMetric) {
+                button.classList.add("is-disabled");
+                button.disabled = true;
+              } else {
+                button.classList.remove("is-disabled");
+                button.disabled = false;
+              }
             });
           }
 
@@ -10822,12 +10943,26 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
           function buildTrendTotalsRows(periods) {
             const aggregate = state.filters.aggregate === "weekly" ? "weekly" : state.filters.aggregate;
             const dateHeading = aggregate === "weekly" ? "Week ending" : "Period ending";
-            const rows = [["Period", dateHeading, "Total actions"]];
+            const metric = state.filters.metric;
+            const valueHeading = metric === "hours"
+              ? "Assisted hours"
+              : (metric === "adoption" ? "Active users (%)" : "Total actions");
+            const rows = [["Period", dateHeading, valueHeading]];
             periods.forEach(period => {
               const label = period && typeof period.label === "string" ? period.label : "";
               const date = period && period.date instanceof Date ? formatShortDate(period.date) : "";
-              const total = Math.round(period && Number.isFinite(period.totalActions) ? period.totalActions : 0);
-              rows.push([label, date, total]);
+              let value = 0;
+              if (metric === "hours") {
+                value = Number.isFinite(period?.assistedHours) ? period.assistedHours : 0;
+              } else if (metric === "adoption") {
+                value = getPeriodAdoptionRate(period);
+              } else {
+                value = Number.isFinite(period?.totalActions) ? Math.round(period.totalActions) : 0;
+              }
+              const normalizedValue = metric === "adoption"
+                ? Number(formatTrendFixed(value, 1))
+                : (metric === "hours" ? Number(formatTrendFixed(value, 1)) : value);
+              rows.push([label, date, normalizedValue]);
             });
             return rows;
           }
@@ -10915,7 +11050,9 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               if (windowLabel) {
                 overviewRows.push(["Time window", windowLabel, "Range of dates included in this view."]);
               }
-              const metricLabel = state.filters.metric === "hours" ? "Assisted hours" : "Actions";
+              const metricLabel = state.filters.metric === "hours"
+                ? "Assisted hours"
+                : (state.filters.metric === "adoption" ? "Active users (%)" : "Actions");
               const aggregateLabel = state.filters.aggregate === "weekly"
                 ? "Weekly"
                 : (state.filters.aggregate === "monthly" ? "Monthly" : String(state.filters.aggregate || ""));
