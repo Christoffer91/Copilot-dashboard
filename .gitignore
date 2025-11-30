@@ -17,3 +17,6 @@ coverage/
 .env
 .env.*
 *.pem
+
+# cPanel deployment config (contains server paths)
+.cpanel.yml
