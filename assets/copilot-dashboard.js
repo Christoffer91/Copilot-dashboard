@@ -1,4 +1,18 @@
 (function () {
+  // ══════════════════════════════════════════════════════════════════════════════
+  // DEBUG MODE - Set to true during development to enable console logging
+  // ══════════════════════════════════════════════════════════════════════════════
+  const DEBUG = false;
+
+  // Logging utilities - only output when DEBUG is enabled
+  function logWarn(message, error) {
+    if (DEBUG) console.warn(message, error);
+  }
+  function logError(message, error) {
+    if (DEBUG) console.error(message, error);
+  }
+  // ══════════════════════════════════════════════════════════════════════════════
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initializeDashboard);
   } else {
@@ -1230,7 +1244,7 @@
             try {
               localStorage.setItem(THEME_STORAGE_KEY, theme);
             } catch (error) {
-              console.warn("Unable to store theme preference", error);
+              logWarn("Unable to store theme preference", error);
             }
           }
       
@@ -1244,7 +1258,7 @@
                 return stored;
               }
             } catch (error) {
-              console.warn("Unable to read stored theme preference", error);
+              logWarn("Unable to read stored theme preference", error);
             }
             return null;
           }
@@ -1903,7 +1917,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 deleteRequest.onerror = finalize;
                 deleteRequest.onblocked = finalize;
               } catch (error) {
-                console.warn("Unable to reset dataset database", error);
+                logWarn("Unable to reset dataset database", error);
                 pendingDbReset = null;
                 resolve();
               }
@@ -2542,7 +2556,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               },
               error: error => {
                 const message = error && error.message ? error.message : "Unknown error";
-                console.error("Saved agent CSV parse failed", error);
+                logError("Saved agent CSV parse failed", error);
                 updateAgentUsageCard([]);
                 if (dom.agentStatus) {
                   dom.agentStatus.textContent = `Saved agent dataset could not be parsed (${message}).`;
@@ -2776,7 +2790,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             try {
               localStorage.setItem(TREND_COLOR_STORAGE_KEY, JSON.stringify({ start: startHex, end: endHex }));
             } catch (error) {
-              console.warn("Unable to persist trend colors", error);
+              logWarn("Unable to persist trend colors", error);
             }
           }
       
@@ -2787,7 +2801,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             try {
               localStorage.removeItem(TREND_COLOR_STORAGE_KEY);
             } catch (error) {
-              console.warn("Unable to clear stored trend colors", error);
+              logWarn("Unable to clear stored trend colors", error);
             }
           }
       
@@ -2845,7 +2859,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 return;
               }
             } catch (error) {
-              console.warn("Unable to load stored trend colors", error);
+              logWarn("Unable to load stored trend colors", error);
             }
             resetTrendGradient({ persist: false });
           }
@@ -2859,7 +2873,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               try {
                 applyTrendGradient(dom.trendColorStart?.value || DEFAULT_TREND_START_COLOR, dom.trendColorEnd?.value || DEFAULT_TREND_END_COLOR);
               } catch (error) {
-                console.error('Unable to update trend colors', error);
+                logError('Unable to update trend colors', error);
                 alert('Could not update colors. Please choose valid hex colors.');
               }
             });
@@ -3572,7 +3586,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
 
           function openSnapshotExportDialog() {
             if (!dom.snapshotExportDialog || typeof dom.snapshotExportDialog.showModal !== "function") {
-              console.warn("Snapshot export dialog is unavailable in this browser.");
+              logWarn("Snapshot export dialog is unavailable in this browser.");
               return;
             }
             resetSnapshotExportDialog();
@@ -3582,7 +3596,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 dom.snapshotPassword.focus();
               }
             } catch (error) {
-              console.warn("Unable to open snapshot dialog", error);
+              logWarn("Unable to open snapshot dialog", error);
             }
           }
 
@@ -3681,7 +3695,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   compressedSize: compressedBytes.length
                 };
               } catch (error) {
-                console.warn(`Unable to compress snapshot ${label || "dataset"} with pako`, error);
+                logWarn(`Unable to compress snapshot ${label || "dataset"} with pako`, error);
                 return null;
               }
             };
@@ -3706,7 +3720,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   compressedSize: compressedBytes.length
                 };
               } catch (error) {
-                console.warn(`Unable to compress snapshot ${label || "dataset"} with fflate`, error);
+                logWarn(`Unable to compress snapshot ${label || "dataset"} with fflate`, error);
                 return null;
               }
             };
@@ -3733,7 +3747,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   compressedSize: compressedBytes.length
                 };
               } catch (error) {
-                console.warn(`Unable to compress snapshot ${label || "dataset"} with CompressionStream`, error);
+                logWarn(`Unable to compress snapshot ${label || "dataset"} with CompressionStream`, error);
                 return null;
               }
             };
@@ -3787,7 +3801,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                     return finalizeSection(decoder.decode(decompressed));
                   }
                 } catch (error) {
-                  console.warn(`Unable to decompress snapshot ${label || "dataset"} with fflate`, error);
+                  logWarn(`Unable to decompress snapshot ${label || "dataset"} with fflate`, error);
                 }
               }
               if (window.pako && typeof window.pako.ungzip === "function") {
@@ -3798,7 +3812,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                     return finalizeSection(decoder.decode(decompressed));
                   }
                 } catch (error) {
-                  console.warn(`Unable to decompress snapshot ${label || "dataset"} with pako`, error);
+                  logWarn(`Unable to decompress snapshot ${label || "dataset"} with pako`, error);
                 }
               }
               if (typeof DecompressionStream === "function") {
@@ -3811,7 +3825,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   const csvText = await response.text();
                   return finalizeSection(csvText);
                 } catch (error) {
-                  console.warn(`Unable to decompress snapshot ${label || "dataset"} with DecompressionStream`, error);
+                  logWarn(`Unable to decompress snapshot ${label || "dataset"} with DecompressionStream`, error);
                 }
               }
               throw new Error("This browser cannot open compressed snapshots. Try the latest version of Chrome, Edge, or another Chromium-based browser.");
@@ -4474,7 +4488,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   .join("\n");
               }
             } catch (error) {
-              console.warn("Unable to read stylesheet rules for SharePoint bundle", error);
+              logWarn("Unable to read stylesheet rules for SharePoint bundle", error);
             }
             return null;
           }
@@ -4515,7 +4529,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             try {
               htmlSource = await fetchTextAsset("copilot-dashboard.html");
             } catch (error) {
-              console.warn("Unable to read copilot-dashboard.html, falling back to live DOM", error);
+              logWarn("Unable to read copilot-dashboard.html, falling back to live DOM", error);
               htmlSource = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
             }
             const sanitizedHtml = htmlSource
@@ -4596,7 +4610,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 clearSnapshotCopyFeedback();
               }, 1800);
             } catch (error) {
-              console.warn("Unable to copy snapshot", error);
+              logWarn("Unable to copy snapshot", error);
               setSnapshotNotice(dom.snapshotError, "Unable to copy automatically. Select and copy the snapshot text manually.", "error");
             }
           }
@@ -4620,7 +4634,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 revokeSnapshotDownloadUrl();
               }, 1500);
             } catch (error) {
-              console.warn("Unable to download snapshot", error);
+              logWarn("Unable to download snapshot", error);
               setSnapshotNotice(dom.snapshotError, "Unable to download snapshot. Copy the text instead.", "error");
             }
           }
@@ -4635,7 +4649,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               await exportSnapshotBundle(latestSnapshotExport);
               setSnapshotNotice(dom.snapshotError, "Bundle ready. Upload the ZIP to your internal site.", "success");
             } catch (error) {
-              console.error("Unable to build SharePoint bundle", error);
+              logError("Unable to build SharePoint bundle", error);
               const message = error && error.message ? error.message : "Unable to create SharePoint bundle.";
               setSnapshotNotice(dom.snapshotError, message, "error");
             }
@@ -4643,7 +4657,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
 
           function openSnapshotImportDialog() {
             if (!dom.snapshotImportDialog || typeof dom.snapshotImportDialog.showModal !== "function") {
-              console.warn("Snapshot import dialog is unavailable in this browser.");
+              logWarn("Snapshot import dialog is unavailable in this browser.");
               return;
             }
             resetSnapshotImportDialog();
@@ -4653,7 +4667,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 dom.snapshotImportPassword.focus();
               }
             } catch (error) {
-              console.warn("Unable to open snapshot import dialog", error);
+              logWarn("Unable to open snapshot import dialog", error);
             }
           }
 
@@ -4747,7 +4761,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                     dom.snapshotImportText.value = text;
                   }
                 } catch (error) {
-                  console.warn("Unable to decode snapshot file", error);
+                  logWarn("Unable to decode snapshot file", error);
                   setSnapshotNotice(dom.snapshotImportError, "Unable to decode the selected file.", "error");
                 }
               }
@@ -4820,7 +4834,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 try {
                   payload.agentDataset = await decodeSnapshotSection(payload.agentDataset, { label: "agent dataset" });
                 } catch (agentError) {
-                  console.warn("Unable to decode agent dataset snapshot", agentError);
+                  logWarn("Unable to decode agent dataset snapshot", agentError);
                   payload.agentDataset = null;
                 }
               }
@@ -5015,7 +5029,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 }
               }
             } catch (error) {
-              console.warn("Unable to read caching preference", error);
+              logWarn("Unable to read caching preference", error);
             }
             state.persistDatasets = consent;
             if (dom.persistConsent) {
@@ -5030,7 +5044,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 localStorage.removeItem(DATA_PERSISTENCE_KEY);
               }
             } catch (error) {
-              console.warn("Unable to persist caching preference", error);
+              logWarn("Unable to persist caching preference", error);
             }
           }
       
@@ -5041,7 +5055,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             try {
               localStorage.setItem(DATA_STORAGE_META_KEY, JSON.stringify(meta));
             } catch (error) {
-              console.warn('Unable to store dataset metadata', error);
+              logWarn('Unable to store dataset metadata', error);
             }
           }
       
@@ -5052,7 +5066,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             try {
               localStorage.setItem(AGENT_DATA_STORAGE_META_KEY, JSON.stringify(meta));
             } catch (error) {
-              console.warn('Unable to store agent dataset metadata', error);
+              logWarn('Unable to store agent dataset metadata', error);
             }
           }
 
@@ -5110,16 +5124,16 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             const persistPromise = DATA_DB_SUPPORTED
               ? saveAgentHubSnapshotToIndexedDB(snapshot).then(() => {
                   if (!persistAgentHubSnapshotToLocalStorage(snapshot)) {
-                    console.warn("Unable to mirror agent hub datasets in local storage");
+                    logWarn("Unable to mirror agent hub datasets in local storage");
                   }
                 }).catch(error => {
-                  console.warn("Unable to persist agent hub datasets in IndexedDB", error);
+                  logWarn("Unable to persist agent hub datasets in IndexedDB", error);
                   return persistAgentHubSnapshotToLocalStorage(snapshot);
                 })
               : Promise.resolve(persistAgentHubSnapshotToLocalStorage(snapshot));
             persistPromise.catch(error => {
               if (error) {
-                console.warn("Unable to persist agent hub datasets", error);
+                logWarn("Unable to persist agent hub datasets", error);
               }
             });
             if (dom.agentStatus) {
@@ -5138,7 +5152,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               localStorage.setItem(AGENT_HUB_STORAGE_KEY, JSON.stringify({ version: 1, datasets: snapshot }));
               return true;
             } catch (error) {
-              console.warn("Unable to persist agent hub datasets in local storage", error);
+              logWarn("Unable to persist agent hub datasets in local storage", error);
               return false;
             }
           }
@@ -5148,12 +5162,12 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               try {
                 localStorage.removeItem(AGENT_HUB_STORAGE_KEY);
               } catch (error) {
-                console.warn("Unable to clear stored agent hub datasets", error);
+                logWarn("Unable to clear stored agent hub datasets", error);
               }
             }
             deleteAgentHubSnapshotFromIndexedDB().catch(error => {
               if (error) {
-                console.warn("Unable to delete agent hub datasets from IndexedDB", error);
+                logWarn("Unable to delete agent hub datasets from IndexedDB", error);
               }
             });
           }
@@ -5240,7 +5254,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               }
               return { data: btoa(binary), encoding: "base64-deflate" };
             } catch (error) {
-              console.warn("Unable to compress dataset for storage", error);
+              logWarn("Unable to compress dataset for storage", error);
               return { data: csvText, encoding: "plain" };
             }
           }
@@ -5265,7 +5279,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               });
               return result;
             } catch (error) {
-              console.warn("Unable to decompress stored dataset", error);
+              logWarn("Unable to decompress stored dataset", error);
               return data || "";
             }
           }
@@ -5287,7 +5301,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               storeDatasetMeta(normalizedMeta);
               return true;
             } catch (storageError) {
-              console.warn("Unable to persist dataset in localStorage", storageError);
+              logWarn("Unable to persist dataset in localStorage", storageError);
               return false;
             }
           }
@@ -5322,7 +5336,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             };
             const handleLocalStorageFallback = error => {
               if (error) {
-                console.warn("Unable to persist dataset in IndexedDB", error);
+                logWarn("Unable to persist dataset in IndexedDB", error);
               }
               if (persistDatasetToLocalStorage(csvText, normalizedMeta)) {
                 setSavedStatusMessage();
@@ -5336,7 +5350,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 storeDatasetMeta(savedMeta);
                 setSavedStatusMessage();
                 if (!persistDatasetToLocalStorage(csvText, savedMeta)) {
-                  console.warn("Unable to mirror dataset in local storage");
+                  logWarn("Unable to mirror dataset in local storage");
                 }
               }).catch(handleLocalStorageFallback);
               return;
@@ -5385,11 +5399,11 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 setSavedStatusMessage();
                 return true;
               } catch (error) {
-                console.warn("Unable to persist agent dataset in local storage", error);
+                logWarn("Unable to persist agent dataset in local storage", error);
                 try {
                   localStorage.removeItem(AGENT_DATA_STORAGE_META_KEY);
                 } catch (metaError) {
-                  console.warn("Unable to clear agent dataset metadata", metaError);
+                  logWarn("Unable to clear agent dataset metadata", metaError);
                 }
                 return false;
               }
@@ -5404,12 +5418,12 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   try {
                     localStorage.removeItem(AGENT_DATA_STORAGE_KEY);
                   } catch (cleanupError) {
-                    console.warn("Unable to clear legacy agent dataset cache", cleanupError);
+                    logWarn("Unable to clear legacy agent dataset cache", cleanupError);
                   }
                 }
                 setSavedStatusMessage();
               }).catch(error => {
-                console.warn("Unable to persist agent dataset in IndexedDB", error);
+                logWarn("Unable to persist agent dataset in IndexedDB", error);
                 if (!persistToLocalStorage() && dom.agentStatus) {
                   dom.agentStatus.textContent = "Loaded agent dataset, but unable to store it locally.";
                 }
@@ -5433,7 +5447,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 localStorage.removeItem(AGENT_DATA_STORAGE_META_KEY);
                 localStorage.removeItem(AGENT_HUB_STORAGE_KEY);
               } catch (error) {
-                console.warn('Unable to clear saved dataset metadata', error);
+                logWarn('Unable to clear saved dataset metadata', error);
               }
             };
             const finalizeClear = () => {
@@ -5495,7 +5509,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                     }
                   }
                 } catch (metaError) {
-                  console.warn("Unable to read agent dataset metadata", metaError);
+                  logWarn("Unable to read agent dataset metadata", metaError);
                 }
               }
               if (payload.csv && typeof payload.csv === "string" && payload.csv.trim()) {
@@ -5505,10 +5519,10 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                     try {
                       localStorage.removeItem(AGENT_DATA_STORAGE_KEY);
                     } catch (cleanupError) {
-                      console.warn("Unable to clear legacy agent dataset cache", cleanupError);
+                      logWarn("Unable to clear legacy agent dataset cache", cleanupError);
                     }
                   }).catch(error => {
-                    console.warn("Unable to migrate agent dataset to IndexedDB", error);
+                    logWarn("Unable to migrate agent dataset to IndexedDB", error);
                   });
                 }
                 if (dom.agentStatus) {
@@ -5517,7 +5531,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 parseAgentUsageText(payload.csv, savedMeta);
               }
             } catch (error) {
-              console.warn("Unable to read saved agent dataset from localStorage", error);
+              logWarn("Unable to read saved agent dataset from localStorage", error);
             }
           }
       
@@ -5541,7 +5555,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               }
               parseAgentUsageText(record.csv, savedMeta);
             }).catch(error => {
-              console.warn("Unable to read saved agent dataset from IndexedDB", error);
+              logWarn("Unable to read saved agent dataset from IndexedDB", error);
               loadAgentDatasetFromLocalStorageLegacy();
             });
           }
@@ -5676,7 +5690,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               try {
                 activeParseController.parser.abort();
               } catch (error) {
-                console.warn("Unable to abort parser", error);
+                logWarn("Unable to abort parser", error);
               }
             }
             finishUploadProgress(silent ? null : "Import canceled.");
@@ -5733,7 +5747,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 return matches.length >= 2 ? "agent" : "copilot";
               }).catch(() => "copilot");
             } catch (error) {
-              console.warn("Unable to inspect CSV header", error);
+              logWarn("Unable to inspect CSV header", error);
               return Promise.resolve("copilot");
             }
           }
@@ -5829,7 +5843,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               try {
                 snapshotFiltersApplied = applySnapshotState(snapshotPayload);
               } catch (error) {
-                console.warn("Unable to apply snapshot state", error);
+                logWarn("Unable to apply snapshot state", error);
               } finally {
                 pendingSnapshotPayload = null;
               }
@@ -6010,7 +6024,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                     }
                   }
                 } catch (metaError) {
-                  console.warn("Unable to read dataset metadata", metaError);
+                  logWarn("Unable to read dataset metadata", metaError);
                 }
               }
               const hasMeta = savedMeta && (savedMeta.name || savedMeta.rows || savedMeta.size);
@@ -6025,10 +6039,10 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                     try {
                       localStorage.removeItem(DATA_STORAGE_KEY);
                     } catch (cleanupError) {
-                      console.warn("Unable to clear legacy dataset cache", cleanupError);
+                      logWarn("Unable to clear legacy dataset cache", cleanupError);
                     }
                   }).catch(error => {
-                    console.warn("Unable to migrate dataset to IndexedDB", error);
+                    logWarn("Unable to migrate dataset to IndexedDB", error);
                   });
                 }
                 if (dom.uploadStatus) {
@@ -6041,7 +6055,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 });
               }
             } catch (error) {
-              console.warn("Unable to read saved dataset from localStorage", error);
+              logWarn("Unable to read saved dataset from localStorage", error);
               updateStoredDatasetControls(null);
             }
           }
@@ -6072,7 +6086,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 savedMeta
               });
             }).catch(error => {
-              console.warn("Unable to read saved dataset from IndexedDB", error);
+              logWarn("Unable to read saved dataset from IndexedDB", error);
               loadDatasetFromLocalStorageLegacy();
             });
           }
@@ -6104,7 +6118,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 loadFromLocalStorage();
               }
             }).catch(error => {
-              console.warn("Unable to read agent hub datasets from IndexedDB", error);
+              logWarn("Unable to read agent hub datasets from IndexedDB", error);
               loadFromLocalStorage();
             });
           }
@@ -6266,7 +6280,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               }
               file.text().then(rememberAndPersist).catch(error => {
                 bufferedCsvText = null;
-                console.warn("Unable to buffer dataset text", error);
+                logWarn("Unable to buffer dataset text", error);
                 clearRememberedDataset();
               });
             };
@@ -6455,7 +6469,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 return parsed && typeof parsed === "object" ? parsed : null;
               }
             } catch (error) {
-              console.warn("Unable to read stored filter preferences", error);
+              logWarn("Unable to read stored filter preferences", error);
             }
             return null;
           }
@@ -6481,7 +6495,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 localStorage.setItem(FILTER_PREFERENCES_KEY, JSON.stringify(preferences));
               }
             } catch (error) {
-              console.warn("Unable to persist filter preferences", error);
+              logWarn("Unable to persist filter preferences", error);
             }
           }
 
@@ -6732,7 +6746,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                         rememberLastAgentDataset(csvText, summaryMeta);
                         persistAgentDataset(csvText, summaryMeta);
                       }).catch(error => {
-                        console.warn("Unable to cache user summary dataset", error);
+                        logWarn("Unable to cache user summary dataset", error);
                       });
                     } else {
                       rememberLastAgentDataset("", summaryMeta);
@@ -6769,13 +6783,13 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                         sourceRows
                       });
                     }).catch(error => {
-                      console.warn("Unable to persist agent dataset", error);
+                      logWarn("Unable to persist agent dataset", error);
                     });
                   }
                 },
                 error: error => {
                   const message = error && error.message ? error.message : "Unknown error";
-                  console.error("Agent CSV parse failed", error);
+                  logError("Agent CSV parse failed", error);
                   if (dom.agentStatus) {
                     dom.agentStatus.textContent = `Agent CSV parse failed: ${message}`;
                   }
@@ -7029,7 +7043,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 return payload.datasets;
               }
             } catch (error) {
-              console.warn("Unable to read agent hub datasets from local storage", error);
+              logWarn("Unable to read agent hub datasets from local storage", error);
             }
             return null;
           }
@@ -10892,7 +10906,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
           }
           window.setTimeout(() => {
             if (!dom.snapshotImportDialog || typeof dom.snapshotImportDialog.showModal !== "function") {
-              console.warn("Snapshot import dialog is unavailable for embedded exports.");
+              logWarn("Snapshot import dialog is unavailable for embedded exports.");
               return;
             }
             resetSnapshotImportDialog();
@@ -10908,7 +10922,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 setSnapshotNotice(dom.snapshotImportError, promptMessage, "info");
               }
             } catch (error) {
-              console.warn("Unable to open snapshot import dialog", error);
+              logWarn("Unable to open snapshot import dialog", error);
             }
           }, 120);
         }
@@ -11117,7 +11131,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
       
                 .catch(error => {
       
-                  console.error("GIF worker failed to load", error);
+                  logError("GIF worker failed to load", error);
       
                   return null;
       
@@ -11206,7 +11220,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               XLSX.writeFile(workbook, filename, { compression: true });
               showExportHint(`Saved totals as ${filename}.`, false);
             } catch (error) {
-              console.error("Excel export failed", error);
+              logError("Excel export failed", error);
               showExportHint("Unable to export totals in this browser.", true);
             }
           }
@@ -11437,7 +11451,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               XLSX.writeFile(workbook, filename, { compression: true });
               showExportHint(`Saved full report as ${filename}.`, false);
             } catch (error) {
-              console.error("Full Excel export failed", error);
+              logError("Full Excel export failed", error);
               showExportHint("Unable to export full report in this browser.", true);
             }
           }
@@ -11629,7 +11643,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               pdf.save(filename);
               showExportHint(`Saved PDF as ${filename}.`, false);
             } catch (error) {
-              console.error("PDF export failed", error);
+              logError("PDF export failed", error);
               showExportHint("Unable to export PDF report.", true);
             }
           }
@@ -11677,7 +11691,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
       
             } catch (error) {
       
-              console.error("PNG export failed", error);
+              logError("PNG export failed", error);
       
               showExportHint("Unable to export PNG in this browser.", true);
       
@@ -11927,7 +11941,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
       
             } catch (error) {
       
-              console.error("Animation export failed", error);
+              logError("Animation export failed", error);
       
               showExportHint("Could not render GIF animation.", true);
       
@@ -11996,7 +12010,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               try {
                 update();
               } catch (error) {
-                console.warn("Unable to refresh filter toggle state", error);
+                logWarn("Unable to refresh filter toggle state", error);
               }
             }
           });
@@ -12364,7 +12378,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               }
               return snippet.text().then(text => detectDelimiterFromSample(text)).catch(() => "");
             } catch (error) {
-              console.warn("Unable to inspect CSV snippet for delimiter", error);
+              logWarn("Unable to inspect CSV snippet for delimiter", error);
               return Promise.resolve("");
             }
           }
