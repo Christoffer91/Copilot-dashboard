@@ -1231,9 +1231,11 @@
             if (dom.floatingThemeToggle && dom.floatingThemeIcon) {
               dom.floatingThemeToggle.setAttribute("aria-pressed", String(isDark));
               dom.floatingThemeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
-              dom.floatingThemeIcon.innerHTML = isDark
-                ? '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M21 15.48A9 9 0 0 1 8.52 3 7 7 0 1 0 21 15.48ZM12 21a9 9 0 0 0 9-9 9 9 0 0 1-9 9Z"/></svg>'
-                : '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 18a1.5 1.5 0 0 0-1.5 1.5v.75a1.5 1.5 0 1 0 3 0v-.75A1.5 1.5 0 0 0 12 18Zm6.01-3.41-1.08-1.08a1.5 1.5 0 0 0-2.12 2.12l1.08 1.08a1.5 1.5 0 0 0 2.12-2.12ZM6.5 12a1.5 1.5 0 0 0-1.5-1.5H4.25a1.5 1.5 0 0 0 0 3H5a1.5 1.5 0 0 0 1.5-1.5Zm10.93-5.43-1.08-1.08a1.5 1.5 0 0 0-2.12 2.12l1.08 1.08a1.5 1.5 0 0 0 2.12-2.12ZM12 6a1.5 1.5 0 0 0 1.5-1.5V3.75a1.5 1.5 0 0 0-3 0V4.5A1.5 1.5 0 0 0 12 6Zm-4.78.57-1.08-1.08a1.5 1.5 0 1 0-2.12 2.12l1.08 1.08a1.5 1.5 0 0 0 2.12-2.12ZM7.17 13.91l-1.08 1.08a1.5 1.5 0 0 0 2.12 2.12l1.08-1.08a1.5 1.5 0 0 0-2.12-2.12Z"/></svg>';
+              // If we're currently in dark mode, show a sun (switch to light).
+              // If we're currently in light mode, show a moon (switch to dark).
+              const sunIcon = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>';
+              const moonIcon = '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+              dom.floatingThemeIcon.innerHTML = isDark ? sunIcon : moonIcon;
             }
           }
       
