@@ -26,7 +26,7 @@
     crossorigin="anonymous"
     integrity="sha384-STiTZ2kjdnc/em4jSELZZ6VypRToc92cA0m6Nppx3J8C4mt0fjMNUm1xnm1yoP96"
   />
-  <link rel="stylesheet" href="assets/copilot-dashboard.css?v=20251212-8" />
+  <link rel="stylesheet" href="assets/copilot-dashboard.css?v=20251226-1" />
   <script
     src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"
     crossorigin="anonymous"
@@ -38,11 +38,6 @@
     integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC"
   ></script>
 
-  <script
-    src="https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.1/dist/gif.js"
-    crossorigin="anonymous"
-    integrity="sha384-NRBudS8j0C4n1zt6ZpidRjH724QT7VXARyeGDI9SYn4b0X7JUxBIP0JlUxXXyZPc"
-  ></script>
   <script
     src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
     crossorigin="anonymous"
@@ -110,6 +105,11 @@
           <p class="upload-meta" data-upload-meta>No file chosen yet.</p>
         </div>
         <div class="upload-status" role="status" aria-live="polite" data-upload-status>Waiting for your data.</div>
+        <div class="post-upload-cta" data-post-upload-cta hidden aria-label="Next steps">
+          <button type="button" class="upload-button" data-post-upload-excel>Download report (Excel)</button>
+          <button type="button" class="upload-button upload-button--ghost" data-post-upload-copy-summary hidden>Copy summary</button>
+          <button type="button" class="upload-button upload-button--ghost" data-post-upload-more>More export options</button>
+        </div>
       </article>
       <aside class="dataset-card" role="complementary" aria-label="Dataset information">
       <h2>Dataset status</h2>
@@ -380,19 +380,29 @@
       <button type="button" class="trend-view-button" data-trend-view="average" aria-pressed="false">Avg per user</button>
     </div>
     <div class="series-toggle-rail" data-series-toggle-group aria-label="Series visibility toggles"></div>
-        <div class="export-controls" data-export-controls>
-        <button type="button" class="export-trigger" data-export-trigger aria-haspopup="true" aria-expanded="false">Export</button>
-        <div class="export-menu" data-export-menu hidden role="menu">
-          <button type="button" data-export-pdf role="menuitem">Download PDF report</button>
-          <button type="button" data-export-png role="menuitem">Download PNG</button>
-          <button type="button" data-export-video role="menuitem">Download animation</button>
-          <button type="button" data-export-excel role="menuitem">Download totals (Excel)</button>
-          <button type="button" data-export-excel-full role="menuitem">Download full report (Excel)</button>
-          <label class="export-option" data-export-include-details-wrapper>
-            <input type="checkbox" data-export-include-details checked />
-            Include category detail lines
-          </label>
-          <p class="export-hint" data-export-hint hidden></p>
+        <div class="export-controls" data-export-controls aria-label="Export results">
+          <div class="export-quick" role="group" aria-label="Quick exports">
+            <button type="button" class="export-quick-button" data-export-quick-excel>Excel full report</button>
+            <button type="button" class="export-quick-button export-quick-button--ghost" data-export-quick-csv>CSV</button>
+            <button type="button" class="export-quick-button export-quick-button--ghost" data-export-quick-pdf>PDF</button>
+            <button type="button" class="export-quick-button export-quick-button--ghost" data-export-copy-summary hidden>Copy summary</button>
+            <button type="button" class="export-quick-button export-quick-button--ghost" data-export-copy-image hidden>Copy image</button>
+            <button type="button" class="export-trigger" data-export-trigger aria-haspopup="true" aria-expanded="false">More options</button>
+          </div>
+          <div class="export-menu" data-export-menu hidden role="menu">
+            <button type="button" data-export-pdf role="menuitem">Download PDF report</button>
+            <button type="button" data-export-csv role="menuitem">Download CSV (trend data)</button>
+            <button type="button" data-export-png role="menuitem">Download PNG</button>
+            <button type="button" data-export-copy-summary role="menuitem">Copy summary</button>
+            <button type="button" data-export-copy-image role="menuitem">Copy image (trend)</button>
+            <button type="button" data-export-video role="menuitem">Download animation</button>
+            <button type="button" data-export-excel role="menuitem">Download totals (Excel)</button>
+            <button type="button" data-export-excel-full role="menuitem">Download full report (Excel)</button>
+            <label class="export-option" data-export-include-details-wrapper>
+              <input type="checkbox" data-export-include-details checked />
+              Include category detail lines
+            </label>
+            <p class="export-hint" data-export-hint hidden></p>
           </div>
         </div>
       </div>
@@ -1097,6 +1107,6 @@
   ></script>
   <script defer src="assets/sharepoint-static-assets.js"></script>
   <script defer src="assets/vendor/fflate.min.js"></script>
-  <script defer src="assets/copilot-dashboard.js?v=20251212-8"></script>
+  <script defer src="assets/copilot-dashboard.js?v=20251226-1"></script>
 </body>
 </html>

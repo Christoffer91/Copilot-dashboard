@@ -9,7 +9,10 @@ A client-only dashboard for exploring Viva Insights Copilot CSV exports: filter 
 - Upload Viva Insights Copilot CSVs (sample included at `samples/copilot-sample.csv`).
 - Rich filters, multi-metric charts, agent hub tables, theme toggles, and per-capability insights.
 - **Theme system**: 7 built-in themes (Light, Cool Light, Midnight Dark, Carbon Black, Cyberpunk, Neon, Sunset) + custom color picker.
-- Exports: PNG/PDF, Excel summaries, encrypted snapshots, and SharePoint bundle generator.
+- Exports: PNG/PDF/CSV, Excel summaries, encrypted snapshots, and SharePoint bundle generator.
+  - Quick export buttons (Excel full report / CSV / PDF) + "More options" menu.
+  - Post-upload CTA for "Download report (Excel)" (respects current filters).
+  - Quick share: "Copy summary" (text/Markdown) and "Copy image" of the trend card where supported.
 - Privacy-first: processing happens in the browser; local caching is opt-in each session.
 
 ## Quick start
@@ -52,7 +55,7 @@ How to export the CSV from Viva Insights:
 - Console logging suppressed in production (DEBUG flag = false)
 
 ## Dependencies (runtime)
-- CDN: `pako` (gzip), `chart.js`, `papaparse`, `gif.js`, `xlsx`, `html2canvas`, `jspdf`, Inter font.
+- CDN: `pako` (gzip), `chart.js`, `papaparse`, `gif.js` (lazy-loaded for animation export), `xlsx`, `html2canvas`, `jspdf`, Inter font.
 - Local: `assets/vendor/fflate.min.js` (compression fallback), `assets/sharepoint-static-assets.js` (SharePoint bundle styling), `assets/copilot-dashboard.js/css`.
 
 ## Development
@@ -91,3 +94,6 @@ Licensed under the GNU Affero General Public License v3.0 (see `LICENSE`).
   - All themes saved to localStorage and persist across sessions
 - Fixed theme "bleeding" issue where background gradients persisted when switching themes
 - Security review documentation added to README
+
+### 2025-12-26
+- Export UX refresh: quick export buttons, post-upload CTA, clipboard sharing, and save-to-picker support (where available).

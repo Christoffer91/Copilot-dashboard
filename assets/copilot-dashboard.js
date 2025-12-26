@@ -3830,34 +3830,116 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             });
           }
           updateExportDetailOption();
+
+          if (dom.exportQuickExcelFull) {
+            dom.exportQuickExcelFull.addEventListener("click", () => {
+              closeExportMenu();
+              void exportFullReportToExcel();
+            });
+          }
+
+          if (dom.exportQuickCsv) {
+            dom.exportQuickCsv.addEventListener("click", () => {
+              closeExportMenu();
+              void exportTrendDataToCsv();
+            });
+          }
+
+          if (dom.exportQuickPdf) {
+            dom.exportQuickPdf.addEventListener("click", () => {
+              closeExportMenu();
+              void exportDashboardToPDF();
+            });
+          }
+
+          if (dom.exportCopySummaryButtons && dom.exportCopySummaryButtons.length) {
+            const canCopySummary = supportsClipboardText();
+            dom.exportCopySummaryButtons.forEach(button => {
+              button.hidden = !canCopySummary;
+              if (canCopySummary) {
+                button.addEventListener("click", () => {
+                  closeExportMenu();
+                  void handleCopySummary();
+                });
+              }
+            });
+          }
+
+          if (dom.exportCopyImageButtons && dom.exportCopyImageButtons.length) {
+            const canCopyImage = supportsClipboardImage();
+            dom.exportCopyImageButtons.forEach(button => {
+              const isMenuItem = Boolean(button.closest && button.closest(".export-menu"));
+              if (!canCopyImage && isMenuItem) {
+                button.hidden = true;
+                return;
+              }
+              button.hidden = false;
+              button.textContent = canCopyImage
+                ? (isMenuItem ? "Copy image (trend)" : "Copy image")
+                : (isMenuItem ? "Download PNG (trend)" : "Download PNG");
+              button.addEventListener("click", () => {
+                closeExportMenu();
+                void handleCopyImageOrDownload();
+              });
+            });
+          }
+
+          if (dom.postUploadExcel) {
+            dom.postUploadExcel.addEventListener("click", () => {
+              void exportFullReportToExcel();
+            });
+          }
+
+          if (dom.postUploadCopySummary) {
+            const canCopySummary = supportsClipboardText();
+            dom.postUploadCopySummary.hidden = !canCopySummary;
+            if (canCopySummary) {
+              dom.postUploadCopySummary.addEventListener("click", () => {
+                void handleCopySummary();
+              });
+            }
+          }
+
+          if (dom.postUploadMore) {
+            dom.postUploadMore.addEventListener("click", () => {
+              openExportMenuFromCta();
+            });
+          }
+          updatePostUploadCtaVisibility();
       
           if (dom.exportPDF) {
             dom.exportPDF.addEventListener("click", () => {
-              exportDashboardToPDF();
+              void exportDashboardToPDF();
+            });
+          }
+
+          if (dom.exportCSV) {
+            dom.exportCSV.addEventListener("click", () => {
+              void exportTrendDataToCsv();
             });
           }
       
           if (dom.exportPNG) {
             dom.exportPNG.addEventListener("click", () => {
-              exportChartAsPNG();
+              void exportChartAsPNG();
             });
           }
       
           if (dom.exportVideo) {
             dom.exportVideo.addEventListener("click", () => {
-              exportChartAnimation();
+              void exportChartAnimation();
             });
           }
       
           if (dom.exportExcel) {
             dom.exportExcel.addEventListener("click", () => {
-              exportTrendTotalsToExcel();
+              void exportTrendTotalsToExcel();
             });
           }
 
           if (dom.exportExcelFull) {
             dom.exportExcelFull.addEventListener("click", () => {
-              exportFullReportToExcel();
+              void exportFullReportToExcel();
             });
           }
           if (dom.enabledLicensesExportTrigger && dom.enabledLicensesExportMenu) {
@@ -11440,6 +11522,28 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             dom.exportMenu.hidden = !shouldOpen;
             dom.exportTrigger.setAttribute("aria-expanded", String(shouldOpen));
           }
+
+          function openExportMenuFromCta() {
+            if (!dom.exportControls || !dom.exportMenu || !dom.exportTrigger) {
+              return;
+            }
+            try {
+              dom.exportControls.scrollIntoView({ behavior: "smooth", block: "start" });
+            } catch (error) {
+              dom.exportControls.scrollIntoView();
+            }
+            window.setTimeout(() => {
+              if (!dom.exportMenu || !dom.exportTrigger) {
+                return;
+              }
+              dom.exportMenu.hidden = false;
+              dom.exportTrigger.setAttribute("aria-expanded", "true");
+              const firstItem = dom.exportMenu.querySelector("button, [role='menuitem']");
+              if (firstItem && typeof firstItem.focus === "function") {
+                firstItem.focus();
+              }
+            }, 220);
+          }
       
           function closeExportMenu() {
             if (!dom.exportMenu || !dom.exportTrigger) {
@@ -12475,7 +12579,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             document.body.append(link);
           link.click();
           link.remove();
-          URL.revokeObjectURL(url);
+          window.setTimeout(() => URL.revokeObjectURL(url), 1200);
         }
 
         function setupFilterToggleGroup(buttons, select, datasetKey) {
