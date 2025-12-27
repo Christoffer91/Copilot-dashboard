@@ -162,6 +162,7 @@
             exportPreferences: {
               includeDetails: true
             },
+            pdfExportPreferences: null,
             trendColorPreference: {
               start: null,
               end: null
@@ -1778,6 +1779,7 @@
             exportTrigger: document.querySelector("[data-export-trigger]"),
             exportMenu: document.querySelector("[data-export-menu]"),
             exportPDF: document.querySelector("[data-export-pdf]"),
+            exportPdfCustom: document.querySelector("[data-export-pdf-custom]"),
             exportCSV: document.querySelector("[data-export-csv]"),
             exportPNG: document.querySelector("[data-export-png]"),
             exportVideo: document.querySelector("[data-export-video]"),
@@ -1817,6 +1819,11 @@
             snapshotImportError: document.querySelector("[data-snapshot-import-error]"),
             snapshotImportCancel: document.querySelector("[data-snapshot-import-cancel]"),
             snapshotImportSubmit: document.querySelector("[data-snapshot-import-submit]"),
+            pdfExportDialog: document.querySelector("[data-pdf-export-dialog]"),
+            pdfExportForm: document.querySelector("[data-pdf-export-form]"),
+            pdfExportOptions: document.querySelector("[data-pdf-export-options]"),
+            pdfExportCancel: document.querySelector("[data-pdf-export-cancel]"),
+            pdfExportSubmit: document.querySelector("[data-pdf-export-submit]"),
             snapshotExportHtml: document.querySelector("[data-snapshot-export-html]"),
             clearStoredDataset: document.querySelector("[data-clear-storage]"),
             persistConsent: document.querySelector("[data-consent-persist]"),
@@ -2156,6 +2163,7 @@
           const DATA_PERSISTENCE_KEY = 'copilotDashboardPersistence';
           const DATA_CONSENT_KEY = 'copilotPersistConsent';
           const FILTER_PREFERENCES_KEY = 'copilotFilterPrefs';
+          const PDF_EXPORT_PREFERENCES_KEY = 'copilotPdfExportPrefs';
           const MAX_DATASET_FILE_SIZE = Infinity;
           const DATASET_CACHE_LIMIT_BYTES = 80 * 1024 * 1024; // Keep cache limit lower than upload limit to avoid repeated storage failures.
           const CSV_ACCEPTED_MIME_TYPES = new Set(["text/csv", "application/vnd.ms-excel"]);
@@ -4166,6 +4174,254 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
             revokeSnapshotDownloadUrl();
             setButtonEnabled(dom.snapshotExportHtml, false);
             updateSnapshotControlsAvailability();
+          }
+
+          function loadPdfExportPreferences() {
+            try {
+              const raw = localStorage.getItem(PDF_EXPORT_PREFERENCES_KEY);
+              if (!raw) {
+                return null;
+              }
+              const parsed = JSON.parse(raw);
+              if (!parsed || typeof parsed !== "object") {
+                return null;
+              }
+              if (parsed.version !== 1 || !parsed.sections || typeof parsed.sections !== "object") {
+                return null;
+              }
+              return parsed;
+            } catch (error) {
+              return null;
+            }
+          }
+
+          function savePdfExportPreferences(sections) {
+            try {
+              localStorage.setItem(PDF_EXPORT_PREFERENCES_KEY, JSON.stringify({ version: 1, sections }));
+            } catch (error) {
+              // ignore
+            }
+          }
+
+          function hasAgentPdfData() {
+            const agentTbody = document.querySelector('tbody[data-agent-hub-tbody="agents"]');
+            return Boolean(agentTbody && agentTbody.querySelector("tr"));
+          }
+
+          function getPdfExportSectionDefinitions() {
+            const hasVisibleData = (element, emptyElement) => Boolean(
+              element
+                && !element.hidden
+                && (!emptyElement || emptyElement.hidden)
+            );
+            const defs = [
+              {
+                id: "keyMetrics",
+                label: "Key metrics",
+                defaultInclude: true,
+                formats: ["image", "text"],
+                defaultFormat: "image",
+                getElement: () => document.querySelector(".summary-grid"),
+                isAvailable: () => Boolean(document.querySelector(".summary-grid")),
+                renderText: renderPdfKeyMetricsText
+              },
+              {
+                id: "impactTrend",
+                label: "Impact trend",
+                defaultInclude: true,
+                formats: ["image"],
+                defaultFormat: "image",
+                getElement: () => document.querySelector(".trend-card[aria-label='Impact trend']"),
+                isAvailable: () => Boolean(document.querySelector(".trend-card[aria-label='Impact trend']"))
+              },
+              {
+                id: "groupBreakdown",
+                label: "Impact trend breakdown",
+                defaultInclude: true,
+                formats: ["image", "text"],
+                defaultFormat: "image",
+                getElement: () => document.querySelector(".group-card[aria-label='Group breakdown']"),
+                isAvailable: () => Boolean(document.querySelector(".group-card[aria-label='Group breakdown']")),
+                renderText: renderPdfGroupBreakdownText
+              },
+              {
+                id: "adoptionByApp",
+                label: "Adoption by app",
+                defaultInclude: true,
+                formats: ["image", "text"],
+                defaultFormat: "image",
+                getElement: () => dom.adoptionCard || document.querySelector("[data-adoption-card]"),
+                isAvailable: () => {
+                  const element = dom.adoptionCard || document.querySelector("[data-adoption-card]");
+                  return Boolean(element && !element.hidden);
+                },
+                renderText: renderPdfAdoptionByAppText
+              },
+              {
+                id: "usageIntensity",
+                label: "Usage intensity",
+                defaultInclude: true,
+                formats: ["image"],
+                defaultFormat: "image",
+                getElement: () => dom.usageCard || document.querySelector("[data-usage-card]"),
+                isAvailable: () => hasVisibleData(dom.usageCard || document.querySelector("[data-usage-card]"), dom.usageEmpty)
+              },
+              {
+                id: "usageIntensityComparison",
+                label: "Usage intensity comparison",
+                defaultInclude: true,
+                formats: ["image"],
+                defaultFormat: "image",
+                getElement: () => dom.usageTrendCard || document.querySelector("[data-usage-trend-card]"),
+                isAvailable: () => hasVisibleData(dom.usageTrendCard || document.querySelector("[data-usage-trend-card]"), dom.usageTrendEmpty)
+              },
+              {
+                id: "licensedUsersTrend",
+                label: "Licensed users trend",
+                defaultInclude: true,
+                formats: ["image"],
+                defaultFormat: "image",
+                getElement: () => dom.enabledLicensesCard || document.querySelector("[data-enabled-licenses-card]"),
+                isAvailable: () => hasVisibleData(dom.enabledLicensesCard || document.querySelector("[data-enabled-licenses-card]"), dom.enabledLicensesEmpty)
+              },
+              {
+                id: "returningUsers",
+                label: "Returning users",
+                defaultInclude: true,
+                formats: ["image"],
+                defaultFormat: "image",
+                getElement: () => dom.returningCard || document.querySelector("[data-returning-card]"),
+                isAvailable: () => hasVisibleData(dom.returningCard || document.querySelector("[data-returning-card]"), dom.returningEmpty)
+              },
+              {
+                id: "capabilityHighlights",
+                label: "Copilot capability highlights",
+                defaultInclude: true,
+                formats: ["image"],
+                defaultFormat: "image",
+                getElement: () => document.querySelector(".category-grid"),
+                isAvailable: () => Boolean(document.querySelector(".category-grid"))
+              },
+              {
+                id: "agents",
+                label: "Top Copilot agents",
+                defaultInclude: true,
+                formats: ["text"],
+                defaultFormat: "text",
+                forceLast: true,
+                isAvailable: () => hasAgentPdfData(),
+                renderText: renderPdfAgentsText
+              }
+            ];
+            const ordered = defs.filter(def => !def.forceLast).concat(defs.filter(def => def.forceLast));
+            return ordered;
+          }
+
+          function openPdfExportDialog() {
+            if (!dom.pdfExportDialog || typeof dom.pdfExportDialog.showModal !== "function") {
+              showToast("PDF dialog unavailable", "Your browser does not support the export dialog.", "error");
+              return;
+            }
+            closeExportMenu();
+            resetPdfExportDialog();
+            try {
+              dom.pdfExportDialog.showModal();
+            } catch (error) {
+              logWarn("Unable to open PDF export dialog", error);
+            }
+          }
+
+          function closePdfExportDialog() {
+            if (dom.pdfExportDialog && dom.pdfExportDialog.open) {
+              dom.pdfExportDialog.close();
+            }
+          }
+
+          function resetPdfExportDialog() {
+            renderPdfExportDialogOptions();
+          }
+
+          function renderPdfExportDialogOptions() {
+            if (!dom.pdfExportOptions) {
+              return;
+            }
+            dom.pdfExportOptions.innerHTML = "";
+            const defs = getPdfExportSectionDefinitions();
+            const stored = loadPdfExportPreferences();
+            const storedSections = stored && stored.sections && typeof stored.sections === "object" ? stored.sections : {};
+
+            defs.forEach(def => {
+              const available = typeof def.isAvailable === "function" ? def.isAvailable() : true;
+              const storedForSection = storedSections && storedSections[def.id] && typeof storedSections[def.id] === "object"
+                ? storedSections[def.id]
+                : null;
+              const include = available
+                ? (typeof storedForSection?.include === "boolean" ? storedForSection.include : Boolean(def.defaultInclude))
+                : false;
+              const format = (typeof storedForSection?.format === "string" && Array.isArray(def.formats) && def.formats.includes(storedForSection.format))
+                ? storedForSection.format
+                : def.defaultFormat;
+
+              const row = document.createElement("div");
+              row.className = "pdf-export-option-row";
+              if (!available) {
+                row.classList.add("is-disabled");
+              }
+
+              const label = document.createElement("label");
+              label.className = "pdf-export-option-label";
+              const checkbox = document.createElement("input");
+              checkbox.type = "checkbox";
+              checkbox.dataset.pdfSectionCheckbox = def.id;
+              checkbox.checked = Boolean(include);
+              checkbox.disabled = !available;
+              const text = document.createElement("span");
+              text.textContent = def.label;
+              label.append(checkbox, text);
+
+              const formatSelect = document.createElement("select");
+              formatSelect.className = "pdf-export-option-format";
+              formatSelect.dataset.pdfSectionFormat = def.id;
+              const formats = Array.isArray(def.formats) ? def.formats : ["image"];
+              formats.forEach(value => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = value === "text" ? "Text" : "Screenshot";
+                formatSelect.appendChild(option);
+              });
+              formatSelect.value = formats.includes(format) ? format : formats[0];
+              formatSelect.disabled = !available || formats.length === 1 || !checkbox.checked;
+
+              checkbox.addEventListener("change", () => {
+                formatSelect.disabled = !available || formats.length === 1 || !checkbox.checked;
+              });
+
+              row.append(label, formatSelect);
+              dom.pdfExportOptions.appendChild(row);
+            });
+          }
+
+          function handlePdfExportDialogSubmit(event) {
+            event.preventDefault();
+            if (!dom.pdfExportOptions) {
+              closePdfExportDialog();
+              return;
+            }
+            const sections = {};
+            const checkboxes = dom.pdfExportOptions.querySelectorAll("input[type='checkbox'][data-pdf-section-checkbox]");
+            checkboxes.forEach(box => {
+              const id = box.dataset.pdfSectionCheckbox;
+              if (!id) {
+                return;
+              }
+              const formatSelect = dom.pdfExportOptions.querySelector(`select[data-pdf-section-format="${id}"]`);
+              const format = formatSelect && typeof formatSelect.value === "string" ? formatSelect.value : "image";
+              sections[id] = { include: Boolean(box.checked), format };
+            });
+            savePdfExportPreferences(sections);
+            state.pdfExportPreferences = sections;
+            closePdfExportDialog();
+            void exportDashboardToPDF({ sections });
           }
 
           function clearSnapshotCopyFeedback() {
@@ -12341,7 +12597,7 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
               return;
             }
             try {
-              showExportHint("Preparing PDF report...", false);
+              showToast("Preparing PDF report...", "", "info");
               const aggregates = computeAggregates(filtered);
               const organizationAggregates = computeAggregates(filtered, "organization");
               const countryAggregates = computeAggregates(filtered, "country");
@@ -12468,92 +12724,110 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                 });
               }
 
-              pdf.addPage();
-              let chartY = margin;
-              pdf.setFontSize(14);
-              pdf.text("Key charts", margin, chartY);
-              chartY += 22;
-
-              pdf.setFontSize(12);
-              const chartWidth = pageWidth - margin * 2;
-
-              const trendChart = state.charts.trend;
-              if (trendChart && trendChart.canvas && typeof trendChart.toBase64Image === "function") {
-                const canvas = trendChart.canvas;
-                const aspectRatio = canvas.height && canvas.width ? canvas.height / canvas.width : 0.5;
-                const chartHeight = chartWidth * (aspectRatio || 0.5);
-                pdf.text("Impact trend", margin, chartY);
-                chartY += 14;
-                const trendImage = trendChart.toBase64Image("image/png");
-                pdf.addImage(trendImage, "PNG", margin, chartY, chartWidth, chartHeight);
-                chartY += chartHeight + 20;
-              }
-
-              const enabledChart = state.charts.enabledLicenses;
-              if (enabledChart && enabledChart.canvas && typeof enabledChart.toBase64Image === "function") {
-                const canvas = enabledChart.canvas;
-                const aspectRatio = canvas.height && canvas.width ? canvas.height / canvas.width : 0.5;
-                const chartHeight = chartWidth * (aspectRatio || 0.5);
-                if (chartY + chartHeight + margin > pageHeight) {
-                  pdf.addPage();
-                  chartY = margin;
+              const addAgentsAsText = () => {
+                const agentTbody = document.querySelector('tbody[data-agent-hub-tbody="agents"]');
+                if (!agentTbody) {
+                  return;
                 }
-                pdf.text("Licensed users over time", margin, chartY);
-                chartY += 14;
-                const licensesImage = enabledChart.toBase64Image("image/png");
-                pdf.addImage(licensesImage, "PNG", margin, chartY, chartWidth, chartHeight);
-                chartY += chartHeight + 20;
-              }
-
-              const usageTrendChart = state.charts.usageTrend;
-              if (usageTrendChart && usageTrendChart.canvas && typeof usageTrendChart.toBase64Image === "function") {
-                const canvas = usageTrendChart.canvas;
-                const aspectRatio = canvas.height && canvas.width ? canvas.height / canvas.width : 0.5;
-                const chartHeight = chartWidth * (aspectRatio || 0.5);
-                if (chartY + chartHeight + margin > pageHeight) {
-                  pdf.addPage();
-                  chartY = margin;
+                const rows = Array.from(agentTbody.querySelectorAll("tr"));
+                if (!rows.length) {
+                  return;
                 }
-                pdf.text("Usage intensity trend", margin, chartY);
-                chartY += 14;
-                const chartImage = usageTrendChart.toBase64Image("image/png");
-                pdf.addImage(chartImage, "PNG", margin, chartY, chartWidth, chartHeight);
-                chartY += chartHeight + 20;
-              }
+                const toInt = (value) => {
+                  const digits = String(value ?? "").replace(/[^\d]/g, "");
+                  const parsed = digits ? Number.parseInt(digits, 10) : 0;
+                  return Number.isFinite(parsed) ? parsed : 0;
+                };
+                const agents = rows.map(row => {
+                  const cells = Array.from(row.querySelectorAll("td")).map(cell => (cell.textContent || "").trim());
+                  return {
+                    id: cells[0] || "",
+                    name: cells[1] || "",
+                    creatorType: cells[2] || "",
+                    licensed: toInt(cells[3]),
+                    unlicensed: toInt(cells[4]),
+                    responses: toInt(cells[5])
+                  };
+                }).map(agent => ({ ...agent, total: agent.licensed + agent.unlicensed }))
+                  .filter(agent => agent.name || agent.id);
 
-              const returningChart = state.charts.returningUsers;
-              if (returningChart && returningChart.canvas && typeof returningChart.toBase64Image === "function") {
-                const canvas = returningChart.canvas;
-                const aspectRatio = canvas.height && canvas.width ? canvas.height / canvas.width : 0.5;
-                const chartHeight = chartWidth * (aspectRatio || 0.5);
-                if (chartY + chartHeight + margin > pageHeight) {
-                  pdf.addPage();
-                  chartY = margin;
+                if (!agents.length) {
+                  return;
                 }
-                pdf.text("Returning users over time", margin, chartY);
-                chartY += 14;
-                const chartImage = returningChart.toBase64Image("image/png");
-                pdf.addImage(chartImage, "PNG", margin, chartY, chartWidth, chartHeight);
-                chartY += chartHeight + 20;
-              }
+
+                agents.sort((a, b) => (b.total - a.total) || (b.responses - a.responses) || String(a.name).localeCompare(String(b.name)));
+                const maxAgents = 150;
+                const shown = agents.slice(0, maxAgents);
+                const formatNumber = new Intl.NumberFormat(undefined);
+
+                pdf.addPage();
+                let pageY = margin;
+                pdf.setFontSize(14);
+                pdf.text("Top Copilot agents", margin, pageY);
+                pageY += 18;
+                pdf.setFontSize(10);
+                const subtitle = `Sorted by active users (licensed + unlicensed). Showing top ${shown.length}${agents.length > shown.length ? ` of ${agents.length}` : ""}.`;
+                const subtitleWrapped = pdf.splitTextToSize(subtitle, pageWidth - margin * 2);
+                pdf.text(subtitleWrapped, margin, pageY);
+                pageY += subtitleWrapped.length * 12 + 8;
+
+                shown.forEach((agent, index) => {
+                  const label = agent.name || agent.id || "Unknown agent";
+                  const line = `${index + 1}. ${label} — ${formatNumber.format(agent.total)} active (L: ${formatNumber.format(agent.licensed)}, U: ${formatNumber.format(agent.unlicensed)}) · ${formatNumber.format(agent.responses)} responses`;
+                  const wrapped = pdf.splitTextToSize(line, pageWidth - margin * 2);
+                  const lineHeight = wrapped.length * 12 + 2;
+                  if (pageY + lineHeight > pageHeight - margin) {
+                    pdf.addPage();
+                    pageY = margin;
+                  }
+                  pdf.text(wrapped, margin, pageY);
+                  pageY += lineHeight;
+                });
+              };
 
               if (typeof html2canvas === "function") {
                 const captureBackground = getCssVariableValue("--card-surface", "#ffffff") || "#ffffff";
+                const buildPdfCaptureOptions = () => ({
+                  backgroundColor: captureBackground,
+                  scale: 2,
+                  useCORS: true,
+                  logging: false,
+                  onclone: (clonedDocument) => {
+                    const selectorsToHide = [
+                      "[data-export-menu]",
+                      "[data-enabled-licenses-export-menu]",
+                      "[data-export-hint]",
+                      ".export-hint",
+                      ".sticky-filter-bar",
+                      ".sticky-filter-dropdown",
+                      ".toast-container",
+                      "dialog[open]"
+                    ];
+                    selectorsToHide.forEach(selector => {
+                      clonedDocument.querySelectorAll(selector).forEach(el => {
+                        try {
+                          el.hidden = true;
+                        } catch (error) {
+                          // ignore
+                        }
+                        el.classList.remove("is-open");
+                        el.style.display = "none";
+                      });
+                    });
+                  }
+                });
                 const addSectionScreenshotPage = async (title, element) => {
                   if (!element) {
                     return;
                   }
                   pdf.addPage();
                   let pageY = margin;
-                  pdf.setFontSize(14);
-                  pdf.text(title, margin, pageY);
-                  pageY += 20;
-                  const canvas = await html2canvas(element, {
-                    backgroundColor: captureBackground,
-                    scale: 2,
-                    useCORS: true,
-                    logging: false
-                  });
+                  if (title) {
+                    pdf.setFontSize(14);
+                    pdf.text(title, margin, pageY);
+                    pageY += 20;
+                  }
+                  const canvas = await html2canvas(element, buildPdfCaptureOptions());
                   const imageData = canvas.toDataURL("image/png", 1);
                   const ratio = canvas.height && canvas.width ? canvas.height / canvas.width : 0.75;
                   const contentWidth = pageWidth - margin * 2;
@@ -12569,33 +12843,54 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   pdf.addImage(imageData, "PNG", centeredX, pageY, drawWidth, drawHeight);
                 };
 
-                const groupTableCard = document.querySelector(".group-card[aria-label='Group breakdown']");
-                await addSectionScreenshotPage("Group breakdown", groupTableCard);
+                const hasVisibleData = (element, emptyElement) => Boolean(
+                  element
+                    && !element.hidden
+                    && (!emptyElement || emptyElement.hidden)
+                );
 
-                const adoptionCard = document.querySelector("[data-adoption-card]");
-                await addSectionScreenshotPage("Adoption by app", adoptionCard);
+                const summaryGrid = document.querySelector(".summary-grid");
+                await addSectionScreenshotPage("Key metrics", summaryGrid);
+
+                const impactTrendCard = document.querySelector(".trend-card[aria-label='Impact trend']");
+                await addSectionScreenshotPage("Impact trend", impactTrendCard);
+
+                const groupTableCard = document.querySelector(".group-card[aria-label='Group breakdown']");
+                await addSectionScreenshotPage("Impact trend breakdown", groupTableCard);
+
+                const adoptionCard = dom.adoptionCard || document.querySelector("[data-adoption-card]");
+                if (adoptionCard && !adoptionCard.hidden) {
+                  await addSectionScreenshotPage("Adoption by app", adoptionCard);
+                }
 
                 const usageInsightsCard = dom.usageCard || document.querySelector("[data-usage-card]");
-                const usageHasData = usageInsightsCard
-                  && !usageInsightsCard.hidden
-                  && (!dom.usageEmpty || dom.usageEmpty.hidden);
-                if (usageHasData) {
-                  await addSectionScreenshotPage("Usage intensity insights", usageInsightsCard);
+                if (hasVisibleData(usageInsightsCard, dom.usageEmpty)) {
+                  await addSectionScreenshotPage("Usage intensity", usageInsightsCard);
                 }
 
                 const usageTrendCard = dom.usageTrendCard || document.querySelector("[data-usage-trend-card]");
-                const usageTrendHasData = usageTrendCard
-                  && !usageTrendCard.hidden
-                  && (!dom.usageTrendEmpty || dom.usageTrendEmpty.hidden);
-                if (usageTrendHasData) {
-                  await addSectionScreenshotPage("Usage intensity trend", usageTrendCard);
+                if (hasVisibleData(usageTrendCard, dom.usageTrendEmpty)) {
+                  await addSectionScreenshotPage("Usage intensity comparison", usageTrendCard);
                 }
 
-                const agentHub = document.querySelector("[data-agent-hub]");
-                const agentRows = agentHub ? agentHub.querySelectorAll("tbody[data-agent-hub-tbody] tr") : [];
-                if (agentHub && !agentHub.hidden && agentRows.length) {
-                  await addSectionScreenshotPage("Copilot agents", agentHub);
+                const enabledLicensesCard = dom.enabledLicensesCard || document.querySelector("[data-enabled-licenses-card]");
+                if (hasVisibleData(enabledLicensesCard, dom.enabledLicensesEmpty)) {
+                  await addSectionScreenshotPage("Licensed users trend", enabledLicensesCard);
                 }
+
+                const returningCard = dom.returningCard || document.querySelector("[data-returning-card]");
+                if (hasVisibleData(returningCard, dom.returningEmpty)) {
+                  await addSectionScreenshotPage("Returning users", returningCard);
+                }
+
+                const categoryGrid = document.querySelector(".category-grid");
+                await addSectionScreenshotPage("Copilot capability highlights", categoryGrid);
+
+                // Agents should always come last in the PDF.
+                addAgentsAsText();
+              } else {
+                showToast("Unable to export PDF", "Screenshot library is not available.", "error");
+                return;
               }
 
               const filename = `copilot-dashboard-report-${formatTimestamp()}.pdf`;
@@ -12606,17 +12901,17 @@ USR-008,Northwind Ops,Finland,ops.northwind,2025-02-02,254,58.9,27,69,83,92,1`;
                   accept: { "application/pdf": [".pdf"] }
                 });
                 if (result.canceled) {
-                  showExportHint("Save canceled.", false);
+                  showToast("Save canceled", "", "info");
                   return;
                 }
-                showExportHint(`Saved PDF as ${filename}.`, false);
+                showToast("PDF saved", filename, "info");
               } else {
                 pdf.save(filename);
-                showExportHint(`Saved PDF as ${filename}.`, false);
+                showToast("PDF saved", filename, "info");
               }
             } catch (error) {
               logError("PDF export failed", error);
-              showExportHint("Unable to export PDF report.", true);
+              showToast("Unable to export PDF report.", "", "error");
             }
           }
       
